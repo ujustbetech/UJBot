@@ -1,11 +1,15 @@
 from flask import Flask, render_template, request, jsonify, session
-import os
-
+import os, re
 
 app = Flask(__name__)
 app.secret_key = "supersecret"
 
+# ---------------------- Validation Patterns ----------------------
+EMAIL_REGEX = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+PHONE_REGEX = r"^\d{10}$"
+NAME_REGEX = r"^[A-Za-z ]+$"
 
+# ---------------------- Menu Buttons & Answers ----------------------
 menu_data = {
     "main": [
         "About UJustBe",
@@ -17,7 +21,6 @@ menu_data = {
         "Support & Contact",
         "Exit"
     ],
-
     "About UJustBe": {
         "buttons": [
             "What is UJustBe?",
@@ -122,11 +125,10 @@ menu_data = {
 }
 
 
-
-# ---------------------- Routes ----------------------
 @app.route("/")
 def home():
     session.clear()
+    session["registration_step"] = "name"  # Start registration
     return render_template("chat.html")
 
 
@@ -134,127 +136,76 @@ def home():
 def get_response():
     data = request.get_json()
     user_message = data.get("message", "").strip()
+
+    # ---------------- Registration Flow ----------------
+    if "registration_step" in session:
+        step = session["registration_step"]
+
+        # ✅ Name Validation
+        if step == "name":
+            if not re.match(NAME_REGEX, user_message):
+                return jsonify({"response": "Please enter a valid name (letters only):", "buttons": []})
+            session["user_name"] = user_message
+            session["registration_step"] = "email"
+            return jsonify({"response": "Great! Now please enter your Email ID:", "buttons": []})
+
+        # ✅ Email Validation
+        elif step == "email":
+            if not re.match(EMAIL_REGEX, user_message):
+                return jsonify({"response": "❌ Invalid email! Please enter a valid email address:", "buttons": []})
+            session["user_email"] = user_message
+            session["registration_step"] = "phone"
+            return jsonify({"response": "Thanks! Finally enter your Phone Number (10 digits):", "buttons": []})
+
+        # ✅ Phone Validation
+        elif step == "phone":
+            if not re.match(PHONE_REGEX, user_message):
+                return jsonify({"response": "❌ Invalid phone number! Please enter 10 digits only:", "buttons": []})
+            session["user_phone"] = user_message
+            session.pop("registration_step")
+            session["menu_level"] = "main"
+
+            return jsonify({
+                "response": f"🎉 Welcome {session['user_name']}!\nHow can I help you today?",
+                "buttons": menu_data["main"]
+            })
+
+    # ---------------- Main Menu & Chat Flow ----------------
     search_text = user_message.lower()
 
-    # Initialize session
-    if "menu_level" not in session:
-        session["menu_level"] = "main"
-
-    # Exit → Ask for rating
     if search_text in ["exit", "quit", "bye"]:
-        session["menu_level"] = "main"
-        session["awaiting_rating"] = True
-        return jsonify({
-            "response": "👋 Thanks for chatting with UJBot! Please rate your experience (1–5 stars).",
-            "buttons": []
-        })
+        return jsonify({"response": "Thank you for chatting! 👋", "buttons": []})
 
-    # Rating flow
-    if session.get("awaiting_rating") and user_message in ["1","2","3","4","5"]:
-        session.pop("awaiting_rating")
-        if int(user_message) < 3:
-            session["awaiting_feedback"] = True
-            return jsonify({"response": "⭐ You rated less than 3 stars. Could you please give us your feedback?", "buttons":[]})
-        return jsonify({"response": f"⭐ Thank you for rating us {user_message} stars!", "buttons":[]})
-
-    # Feedback flow
-    if session.get("awaiting_feedback"):
-        session.pop("awaiting_feedback")
-        return jsonify({"response": "🙏 Thank you for your feedback! We'll work to improve.", "buttons":[]})
-
-    # Main Menu
     if search_text in ["main", "menu", "main menu"]:
         session["menu_level"] = "main"
         return jsonify({
-            "response": "🌠 Hello there! Welcome back to the UJustBe Universe. Please choose an option:",
+            "response": "Please choose a category:",
             "buttons": menu_data["main"]
         })
 
     current_level = session.get("menu_level", "main")
 
+    # Submenu answers
     if current_level != "main":
         submenu = menu_data.get(current_level, {})
         for btn, ans in submenu.get("answers", {}).items():
-            
-            if search_text in btn.lower() or search_text in ans.lower():
-                return jsonify({
-                    "response": ans,
-                    "buttons": submenu["buttons"]
-                })
-
-    # 2️⃣ Check top-level menu selection
-    for item in menu_data["main"]:
-        if search_text in item.lower():
-            session["menu_level"] = item
-            return jsonify({
-                "response": f"Here are the options for {item}:",
-                "buttons": menu_data[item]["buttons"]
-            })
-
-    if current_level == "main":
-        return jsonify({
-            "response": "🤔 I didn’t quite get that. Type 'Main Menu' to see options.",
-            "buttons": []
-        })
-
-   
-    submenu = menu_data.get(current_level, {})
-    return jsonify({
-        "response": "🤔 I didn’t quite get that. Please choose one of the options below or type a keyword:",
-        "buttons": submenu.get("buttons", [])
-    })
-
-
-    # Handle submenu question match
-    if current_level != "main":
-        submenu = menu_data.get(current_level, {})
-        if user_message in submenu.get("answers", {}):
-            return jsonify({"response": submenu["answers"][user_message], "buttons": submenu["buttons"]})
-
-    # Handle top-level menu selection
-    if user_message in menu_data:
-        session["menu_level"] = user_message
-        return jsonify({
-            "response": f"Here are the options for {user_message}:",
-            "buttons": menu_data[user_message]["buttons"]
-        })
-        # ✅ Keyword search for main and submenu options
-    search_text = user_message.lower()
-
-    # Search in main menu items
-    for item in menu_data["main"]:
-        if search_text in item.lower():
-            session["menu_level"] = item
-            return jsonify({
-                "response": f"Here are the options for {item}:",
-                "buttons": menu_data[item]["buttons"]
-            })
-
-    # Search inside submenu button labels
-    if current_level != "main":
-        submenu = menu_data.get(current_level, {})
-        for btn in submenu.get("buttons", []):
             if search_text in btn.lower():
-                # If match found & answer exists → show answer
-                if btn in submenu.get("answers", {}):
-                    return jsonify({
-                        "response": submenu["answers"][btn],
-                        "buttons": submenu["buttons"]
-                    })
+                return jsonify({"response": ans, "buttons": submenu["buttons"]})
 
+    # Top-level menu click
+    for item in menu_data["main"]:
+        if search_text in item.lower():
+            session["menu_level"] = item
+            submenu = menu_data[item]
+            return jsonify({
+                "response": f"Here are details for {item}:",
+                "buttons": submenu["buttons"]
+            })
 
-    
-
-# ✅ FINAL FALLBACK — If nothing matched above
-        return jsonify({
-    "response": (
-        "Hmm… I’m not sure I understood that yet 🤔\n\n"
-        "Would you like to go back to the main menu or connect with the Support Team?\n\n"
-        "🔙 Back to Main Menu\n"
-        "📞 Contact Support"
-    ),
-    "buttons": ["Main Menu", "Contact Support"]
-})
+    return jsonify({
+        "response": "I didn't get that 🤔\nTry choosing an option below ⬇️",
+        "buttons": menu_data["main"]
+    })
 
 
 if __name__ == "__main__":

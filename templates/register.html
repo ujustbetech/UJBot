@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UJBot Registration</title>
+    <style>
+        body { font-family: Arial; background:#f4f4f4; display:flex; justify-content:center; align-items:center; height:100vh; }
+        .form-box { background:#fff; padding:25px; border-radius:10px; width:350px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+        input { width:100%; padding:10px; margin:10px 0; border-radius:5px; border:1px solid #ddd; }
+        button { width:100%; padding:10px; background:#007bff; border:none; color:white; border-radius:5px; cursor:pointer; }
+        button:hover { background:#0056b3; }
+    </style>
+</head>
+<body>
+    <form class="form-box" action="/register" method="POST">
+        <h3>Enter Your Details</h3>
+        <input type="text" name="name" placeholder="Full Name" required>
+        <input type="email" name="email" placeholder="Email ID" required>
+        <input type="tel" name="phone" placeholder="Phone Number" required>
+        <button type="submit">Start Chat</button>
+    </form>
+</body>
+</html>
