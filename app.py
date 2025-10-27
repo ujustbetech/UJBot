@@ -27,7 +27,8 @@ menu_data = {
             "Who can join UJustBe?",
             "What is an Orbiter?",
             "CosmOrbiters & MentOrbiters",
-            "Main Menu"
+            "Main Menu",
+            "Exit"
         ],
         "answers": {
             "What is UJustBe?": "UJustBe is a collaborative ecosystem where individuals and businesses (Orbiters) share knowledge, referrals, and opportunities to grow together. 🪐",
@@ -43,7 +44,8 @@ menu_data = {
             "UJustBe Business Cycle",
             "What happens after enrollment?",
             "Enrollment vs Activation",
-            "Main Menu"
+            "Main Menu",
+            "Exit"
         ],
         "answers": {
             "How can I become an Orbiter?": "Start by filling the UJustBe Enrollment Form. Once assessed & approved, you move to activation and begin contributing!",
@@ -58,7 +60,8 @@ menu_data = {
             "What are CC Points?",
             "How do I earn CC Points?",
             "Types of Recognition",
-            "Main Menu"
+            "Main Menu",
+            "Exit"
         ],
         "answers": {
             "What are CC Points?": "CC Points are awarded for contributions like referrals, meetings, mentoring, and community engagement.",
@@ -72,7 +75,8 @@ menu_data = {
             "How do referrals work?",
             "Can I list my business?",
             "Benefits of CosmOrbiter",
-            "Main Menu"
+            "Main Menu",
+            "Exit"
         ],
         "answers": {
             "How do referrals work?": "Orbiters share authentic referrals with each other, building trusted business opportunities within the community.",
@@ -86,7 +90,8 @@ menu_data = {
             "What are Monthly Meetings?",
             "How to attend Monthly Meetings?",
             "What is an E2A Session?",
-            "Main Menu"
+            "Main Menu",
+            "Exit"
         ],
         "answers": {
             "What are Monthly Meetings?": "Monthly Meetings include updates, recognition, business presentations, and education sessions.",
@@ -100,7 +105,8 @@ menu_data = {
             "Core Value",
             "Other Values",
             "Culture Philosophy",
-            "Main Menu"
+            "Main Menu",
+            "Exit"
         ],
         "answers": {
             "Core Value": "Adaptive 💫 — The foundation of our culture.",
@@ -115,6 +121,7 @@ menu_data = {
             "Share an Idea",
             "Recover Login Details",
             "Main Menu"
+            "Exit"
         ],
         "answers": {
             "Contact Support": "📞 8928660399 / 9326062258\n📧 support@ujustbe.com",
@@ -124,13 +131,11 @@ menu_data = {
     }
 }
 
-
 @app.route("/")
 def home():
     session.clear()
     session["registration_step"] = "name"  # Start registration
     return render_template("chat.html")
-
 
 @app.route("/get_response", methods=["POST"])
 def get_response():
@@ -155,7 +160,7 @@ def get_response():
                 return jsonify({"response": "❌ Invalid email! Please enter a valid email address:", "buttons": []})
             session["user_email"] = user_message
             session["registration_step"] = "phone"
-            return jsonify({"response": "Thanks! Finally enter your Phone Number (10 digits):", "buttons": []})
+            return jsonify({"response": "Thanks! Finally enter your Phone Number:", "buttons": []})
 
         # ✅ Phone Validation
         elif step == "phone":
@@ -206,7 +211,6 @@ def get_response():
         "response": "I didn't get that 🤔\nTry choosing an option below ⬇️",
         "buttons": menu_data["main"]
     })
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

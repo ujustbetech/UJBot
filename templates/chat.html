@@ -50,8 +50,18 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s ease-in-out;
+            margin: 0 auto;
+            margin-top: -10px;
+            display: block;
         }
         .btn-main:hover { background: #343a40; color: #f3f3f4; }
+
+        #main-btn-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 10px;
+        }
 
         #input-container { display: flex; align-items: center; gap: 8px; }
         #user-input { flex: 1; padding: 10px; border: none; border-radius: 8px; }
@@ -67,18 +77,10 @@
         }
         #send-btn:hover { background: #74788d; color: #0b0c10; }
 
-        #main-btn-container { width: 100%; display: flex; justify-content: center; margin-bottom: 10px; }
-
         .menu-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; opacity: 0; animation: fadeIn 0.4s forwards; }
-        .menu-btn { padding: 8px 12px; border: none; border-radius: 8px; background: #f3f3f4; color: #0b0c10; cursor: pointer; font-weight: 600; transition: all 0.2s ease-in-out; }
+        .menu-btn { padding: 8px 12px; border: none; border-radius: 8px; background: #f3f3f4; color: #0b0c10; cursor: pointer; font-weight: 600; transition: 0.2s; }
         .menu-btn:hover { background: #343a40; color: #f3f3f4; }
-
         @keyframes fadeIn { to { opacity: 1; } }
-
-        .bot-typing.dot-typing span { animation: blink 1s infinite; margin-right: 2px; }
-        .bot-typing.dot-typing span:nth-child(2) { animation-delay: 0.2s; }
-        .bot-typing.dot-typing span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
 
         .star-rating {
             display: flex;
@@ -87,24 +89,70 @@
             gap: 10px;
             margin-top: 10px;
         }
-        .star {
-            font-size: 30px;
-            cursor: pointer;
-            color: #ccc;
-            transition: color 0.2s;
+        .star { font-size: 30px; cursor: pointer; color: #ccc; transition: color 0.2s; }
+        .star:hover, .star.hovered, .star.selected { color: #fcb92c; }
+
+        /* Tooltip Cloud */
+        #chat-tooltip {
+            position: fixed;
+            bottom: 100px;
+            right: 40px;
+            background: #ffffff;
+            color: #000;
+            padding: 10px 14px;
+            font-size: 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            z-index: 10000;
+            pointer-events: none;
         }
-        .star:hover,
-        .star.hovered,
-        .star.selected { color: #fcb92c; }
+
+        /* Cloud bubbles */
+        #chat-tooltip::before,
+        #chat-tooltip::after {
+            content: '';
+            position: absolute;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+        #chat-tooltip::before {
+            width: 12px;
+            height: 12px;
+            bottom: -10px;
+            left: 50%;
+        }
+        #chat-tooltip::after {
+            width: 8px;
+            height: 8px;
+            bottom: -18px;
+            left: 55%;
+        }
+
+        /* Chat Icon Pulse */
+        #chat-logo {
+            position: fixed !important;
+            bottom: 20px;
+            right: 20px;
+            cursor: pointer;
+            z-index: 10001;
+        }
+
+        .pulse { animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.6); }
+            70% { transform: scale(1.1); box-shadow: 0 0 10px 10px rgba(255,255,255,0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
+
     </style>
 </head>
 <body>
 
-    <!-- Chat container -->
     <div class="chat-container">
-        <button id="close-chat" style="
-            position: absolute; top: 10px; right: 10px; background: #f3f3f4;
-            border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold;">✖</button>
+        <button id="close-chat" style="position:absolute;top:10px;right:10px;background:#f3f3f4;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;font-weight:bold;">✖</button>
 
         <div id="chat-box"></div>
 
@@ -118,8 +166,11 @@
         </div>
     </div>
 
-    <!-- Chat logo -->
-    <div id="chat-logo" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
+    <!-- Tooltip -->
+    <div id="chat-tooltip">Need help? Click here</div>
+
+    <!-- Chat Logo -->
+    <div id="chat-logo">
         <img src="{{ url_for('static', filename='chat-icon.jpeg') }}" alt="Chat" width="60" height="60">
     </div>
 
@@ -128,15 +179,21 @@
         const chatLogo = document.getElementById("chat-logo");
         const chatContainer = document.querySelector(".chat-container");
         const closeChatBtn = document.getElementById("close-chat");
-        let awaitingRating = false;
-        let awaitingFeedback = false;
+        const tooltip = document.getElementById("chat-tooltip");
+        let tooltipTimer;
 
-        // Open chat when logo clicked
+        tooltipTimer = setTimeout(() => {
+            chatLogo.classList.add("pulse");
+            tooltip.style.opacity = "1";
+        }, 3000);
+
         chatLogo.addEventListener("click", () => {
             chatContainer.style.display = "block";
             chatLogo.style.display = "none";
+            chatLogo.classList.remove("pulse");
+            tooltip.style.opacity = "0";
+            clearTimeout(tooltipTimer);
 
-            // First messages 1 second later
             setTimeout(() => {
                 const chatBox = document.getElementById("chat-box");
 
@@ -154,10 +211,14 @@
             }, 1000);
         });
 
-        // Close chat
         closeChatBtn.addEventListener("click", () => {
             chatContainer.style.display = "none";
             chatLogo.style.display = "block";
+
+            tooltipTimer = setTimeout(() => {
+                chatLogo.classList.add("pulse");
+                tooltip.style.opacity = "1";
+            }, 3000);
         });
 
         async function sendMessage(message) {
@@ -221,7 +282,6 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Star rating for exit
         function showStarRating() {
             const chatBox = document.getElementById("chat-box");
             const oldMenu = document.querySelector(".menu-buttons");
@@ -262,10 +322,9 @@
             const chatBox = document.getElementById("chat-box");
 
             if (rating < 3) {
-                awaitingFeedback = true;
                 const feedbackBubble = document.createElement("div");
                 feedbackBubble.className = "bot-msg";
-                feedbackBubble.innerText = "We're sorry 😔. Please tell us how we can improve:";
+                feedbackBubble.innerText = "We are sorry. Please tell us how we can improve:";
                 chatBox.appendChild(feedbackBubble);
             } else {
                 const thanksBubble = document.createElement("div");
