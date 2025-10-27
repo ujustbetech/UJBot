@@ -134,7 +134,7 @@ menu_data = {
 @app.route("/")
 def home():
     session.clear()
-    session["registration_step"] = "name"  # Start registration
+    session["registration_step"] = "name"  
     return render_template("chat.html")
 
 @app.route("/get_response", methods=["POST"])
