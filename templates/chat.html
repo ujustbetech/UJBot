@@ -14,36 +14,38 @@
             font-family: "Poppins", sans-serif;
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
         }
 
-        /* ✅ Responsive chat container */
+        /* ✅ Responsive Chat Container */
         .chat-container {
-            width: 90%;
-            max-width: 400px;
+            width: 95%;
+            max-width: 420px;
             background: #16274f;
             padding: 20px;
             border-radius: 15px;
             border: 2px solid #ced4da;
             position: fixed;
-            bottom: 90px;
-            right: 5%;
-            left: 5%;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
             display: none;
             z-index: 1000;
             box-sizing: border-box;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         #chat-box {
-            height: 60vh;
+            flex: 1;
             overflow-y: auto;
             scroll-behavior: smooth;
-            margin-bottom: 15px;
             background: url("{{ url_for('static', filename='chatbg.jpeg') }}") no-repeat center center;
             background-size: cover;
             border-radius: 10px;
             padding: 10px;
-
-            /* hide scrollbars */
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -56,6 +58,7 @@
             width: fit-content;
             max-width: 80%;
             line-height: 1.4em;
+            word-wrap: break-word;
         }
         .bot-msg { background: #d9f7f5; color: #0b0c10; }
         .user-msg { background: #c4f2fa; color: #0b0c10; margin-left: auto; }
@@ -69,8 +72,7 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s ease-in-out;
-            margin: 0 auto;
-            margin-top: -10px;
+            margin: 10px auto;
             display: block;
         }
         .btn-main:hover { background: #343a40; color: #f3f3f4; }
@@ -79,17 +81,22 @@
             display: flex;
             justify-content: center;
             width: 100%;
-            margin-top: 15px;
-            margin-bottom: 15px;
         }
 
-        #input-container { display: flex; align-items: center; gap: 8px; }
+        /* 📱 Input section pinned at bottom inside chat */
+        #input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
         #user-input {
             flex: 1;
             padding: 12px;
             border: none;
             border-radius: 8px;
             font-size: 16px;
+            box-sizing: border-box;
         }
         #send-btn {
             padding: 10px 15px;
@@ -103,8 +110,24 @@
         }
         #send-btn:hover { background: #74788d; color: #0b0c10; }
 
-        .menu-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; opacity: 0; animation: fadeIn 0.4s forwards; }
-        .menu-btn { padding: 8px 12px; border: none; border-radius: 8px; background: #f3f3f4; color: #0b0c10; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            opacity: 0;
+            animation: fadeIn 0.4s forwards;
+        }
+        .menu-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #f3f3f4;
+            color: #0b0c10;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
         .menu-btn:hover { background: #343a40; color: #f3f3f4; }
         @keyframes fadeIn { to { opacity: 1; } }
 
@@ -153,8 +176,16 @@
         }
 
         @media (max-width: 600px) {
+            .chat-container {
+                width: 95%;
+                left: 50%;
+                transform: translateX(-50%);
+                bottom: 70px;
+                padding: 15px;
+                max-height: 88vh;
+            }
             #chat-logo img { width: 55px; height: 55px; }
-            #chat-tooltip { bottom: 70px; right: 70px; font-size: 13px; padding: 8px 12px; }
+            #chat-tooltip { bottom: 70px; right: 60px; font-size: 13px; padding: 8px 12px; }
         }
 
         .pulse { animation: pulse 1.5s infinite ease-in-out; }
@@ -207,7 +238,7 @@
         }, 3000);
 
         chatLogo.addEventListener("click", () => {
-            chatContainer.style.display = "block";
+            chatContainer.style.display = "flex";
             chatLogo.style.display = "none";
             chatLogo.classList.remove("pulse");
             tooltip.style.opacity = "0";
@@ -243,7 +274,6 @@
 
         async function sendMessage(message) {
             const chatBox = document.getElementById("chat-box");
-
             const userBubble = document.createElement("div");
             userBubble.className = "user-msg";
             userBubble.innerText = message;
@@ -259,8 +289,8 @@
             if (oldMenu) oldMenu.remove();
 
             const typingBubble = document.createElement("div");
-            typingBubble.className = "bot-typing dot-typing";
-            typingBubble.innerHTML = "<span>.</span><span>.</span><span>.</span>";
+            typingBubble.className = "bot-msg";
+            typingBubble.innerText = "Typing...";
             chatBox.appendChild(typingBubble);
             scrollToBottom();
 
@@ -294,10 +324,7 @@
                 const btn = document.createElement("button");
                 btn.className = "menu-btn";
                 btn.innerText = option;
-                btn.onclick = () => {
-                    sendMessage(option);
-                    scrollToBottom();
-                };
+                btn.onclick = () => sendMessage(option);
                 menuDiv.appendChild(btn);
             });
 
@@ -305,7 +332,7 @@
             scrollToBottom();
         }
 
-        // ✅ Star rating with mandatory feedback if rating < 3
+        // ⭐ Star Rating with mandatory feedback for <3
         function showStarRating() {
             const chatBox = document.getElementById("chat-box");
             const oldMenu = document.querySelector(".menu-buttons");
@@ -319,11 +346,9 @@
                 star.className = "star";
                 star.innerHTML = "★";
                 star.dataset.value = i;
-
                 star.addEventListener("mouseover", () => highlightStars(i));
                 star.addEventListener("mouseout", () => highlightStars(0));
                 star.addEventListener("click", () => handleStarClick(i));
-
                 starDiv.appendChild(star);
             }
 
@@ -355,7 +380,6 @@
                 const feedbackInput = document.createElement("input");
                 feedbackInput.type = "text";
                 feedbackInput.placeholder = "Type your feedback...";
-                feedbackInput.id = "low-rating-feedback";
                 feedbackInput.style.width = "100%";
                 feedbackInput.style.padding = "10px";
                 feedbackInput.style.marginTop = "10px";
