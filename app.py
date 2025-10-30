@@ -27,7 +27,6 @@ menu_data = {
             "Who can join UJustBe?",
             "What is an Orbiter?",
             "CosmOrbiters & MentOrbiters",
-            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -44,7 +43,6 @@ menu_data = {
             "UJustBe Business Cycle",
             "What happens after enrollment?",
             "Enrollment vs Activation",
-            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -60,7 +58,6 @@ menu_data = {
             "What are CC Points?",
             "How do I earn CC Points?",
             "Types of Recognition",
-            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -75,7 +72,6 @@ menu_data = {
             "How do referrals work?",
             "Can I list my business?",
             "Benefits of CosmOrbiter",
-            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -90,7 +86,6 @@ menu_data = {
             "What are Monthly Meetings?",
             "How to attend Monthly Meetings?",
             "What is an E2A Session?",
-            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -105,7 +100,6 @@ menu_data = {
             "Core Value",
             "Other Values",
             "Culture Philosophy",
-            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -120,7 +114,6 @@ menu_data = {
             "Contact Support",
             "Share an Idea",
             "Recover Login Details",
-            "Main Menu"
             "Exit"
         ],
         "answers": {
@@ -157,15 +150,26 @@ def get_response():
         # ✅ Email Validation
         elif step == "email":
             if not re.match(EMAIL_REGEX, user_message):
-                return jsonify({"response": "❌ Invalid email! Please enter a valid email address:", "buttons": []})
+                return jsonify({"response": "❌ Invalid format! Please enter a valid email address:", "buttons": []})
+
+            allowed_domains = ["gmail.com", "yahoo.com", "hotmail.com", "rediff.com", "outlook.com"]
+            domain = user_message.split("@")[-1].lower()
+
+            if domain not in allowed_domains:
+                allowed_str = ", ".join(allowed_domains)
+                return jsonify({
+                    "response": f"⚠️ Only emails from {allowed_str} are accepted. Please enter a valid one:",
+                    "buttons": []
+                })
+
             session["user_email"] = user_message
-            session["registration_step"] = "phone"
-            return jsonify({"response": "Thanks! Finally enter your Phone Number:", "buttons": []})
+            session["registration_step"] = "Mobile"
+            return jsonify({"response": "Thanks! Finally enter your Mobile Number:", "buttons": []})
 
         # ✅ Phone Validation
-        elif step == "phone":
+        elif step == "Mobile":
             if not re.match(PHONE_REGEX, user_message):
-                return jsonify({"response": "❌ Invalid phone number! Please enter 10 digits only:", "buttons": []})
+                return jsonify({"response": "❌ Invalid Mobile number! Please enter 10 digits only:", "buttons": []})
             session["user_phone"] = user_message
             session.pop("registration_step")
             session["menu_level"] = "main"
