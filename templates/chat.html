@@ -1,436 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UJBot Chat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UJBot Chat</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 
-    <style>
-        body {
-            background: #0b0c10;
-            color: #fff;
-            font-family: "Poppins", sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
+  <style>
+    body {
+      background: #0b0c10;
+      color: #fff;
+      font-family: "Poppins", sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
 
-        /* ✅ Responsive Chat Container */
-        .chat-container {
-            width: 95%;
-            max-width: 420px;
-            background: #16274f;
-            padding: 20px;
-            border-radius: 15px;
-            border: 2px solid #ced4da;
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            z-index: 1000;
-            box-sizing: border-box;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
+    /* Chat Window */
+    .chat-container {
+      width: 95%;
+      max-width: 420px;
+      background: #16274f;
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px solid #ced4da;
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      z-index: 1000;
+      box-sizing: border-box;
+      max-height: 85vh;
+      flex-direction: column;
+      justify-content: space-between;
+    }
 
-        #chat-box {
-            flex: 1;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-            background: url("{{ url_for('static', filename='chatbg.jpeg') }}") no-repeat center center;
-            background-size: cover;
-            border-radius: 10px;
-            padding: 10px;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        #chat-box::-webkit-scrollbar { display: none; }
+    #chat-box {
+      flex: 1;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      background: url("{{ url_for('static', filename='chatbg.jpeg') }}") no-repeat center center;
+      background-size: cover;
+      border-radius: 10px;
+      padding: 10px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #chat-box::-webkit-scrollbar { display: none; }
 
-        .bot-msg, .user-msg {
-            padding: 10px;
-            border-radius: 10px;
-            margin: 8px 0;
-            width: fit-content;
-            max-width: 80%;
-            line-height: 1.4em;
-            word-wrap: break-word;
-        }
-        .bot-msg { background: #d9f7f5; color: #0b0c10; }
-        .user-msg { background: #c4f2fa; color: #0b0c10; margin-left: auto; }
+    .bot-msg, .user-msg {
+      padding: 10px;
+      border-radius: 10px;
+      margin: 8px 0;
+      width: fit-content;
+      max-width: 80%;
+      line-height: 1.4em;
+      word-wrap: break-word;
+    }
+    .bot-msg { background: #d9f7f5; color: #0b0c10; }
+    .user-msg { background: #c4f2fa; color: #0b0c10; margin-left: auto; }
 
-        .btn-main {
-            background: #f3f3f4;
-            color: #0b0c10;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease-in-out;
-            margin: 10px auto;
-            display: block;
-        }
-        .btn-main:hover { background: #343a40; color: #f3f3f4; }
+    .btn-main {
+      background: #f3f3f4;
+      color: #0b0c10;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease-in-out;
+      margin: 10px auto;
+      display: block;
+    }
+    .btn-main:hover { background: #343a40; color: #f3f3f4; }
 
-        #main-btn-container {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
+    #main-btn-container {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
 
-        /* 📱 Input section pinned at bottom inside chat */
-        #input-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        #user-input {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        #send-btn {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 8px;
-            background: #343a40;
-            cursor: pointer;
-            color: #fff;
-            font-weight: 600;
-            font-size: 16px;
-        }
-        #send-btn:hover { background: #74788d; color: #0b0c10; }
+    #input-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
 
-        .menu-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 10px;
-            opacity: 0;
-            animation: fadeIn 0.4s forwards;
-        }
-        .menu-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 8px;
-            background: #f3f3f4;
-            color: #0b0c10;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-        .menu-btn:hover { background: #343a40; color: #f3f3f4; }
-        @keyframes fadeIn { to { opacity: 1; } }
+    #user-input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
 
-        .star-rating {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .star { font-size: 30px; cursor: pointer; color: #ccc; transition: color 0.2s; }
-        .star:hover, .star.hovered, .star.selected { color: #fcb92c; }
+    #send-btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #343a40;
+      cursor: pointer;
+      color: #fff;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    #send-btn:hover { background: #74788d; color: #0b0c10; }
 
-        #chat-tooltip {
-            position: fixed;
-            bottom: 80px;
-            right: 90px;
-            background: #ffffff;
-            color: #000;
-            padding: 10px 16px;
-            font-size: 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.4s ease-in-out;
-            z-index: 10000;
-            pointer-events: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      opacity: 0;
+      animation: fadeIn 0.4s forwards;
+    }
+    .menu-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      background: #f3f3f4;
+      color: #0b0c10;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .menu-btn:hover { background: #343a40; color: #f3f3f4; }
+    @keyframes fadeIn { to { opacity: 1; } }
 
-        #chat-logo {
-            position: fixed !important;
-            bottom: 20px;
-            right: 20px;
-            cursor: pointer;
-            z-index: 10001;
-        }
+    /* 🌟 Floating glowing logo */
+    #chat-logo {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      z-index: 1001;
+      cursor: pointer;
+      animation: floatUpDown 3s ease-in-out infinite;
+    }
 
-        #chat-logo img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
+    .glow-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: radial-gradient(circle, #ffffff 40%, #b0c4de 80%, transparent 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
-        @media (max-width: 600px) {
-            .chat-container {
-                width: 95%;
-                left: 50%;
-                transform: translateX(-50%);
-                bottom: 70px;
-                padding: 15px;
-                max-height: 88vh;
-            }
-            #chat-logo img { width: 55px; height: 55px; }
-            #chat-tooltip { bottom: 70px; right: 60px; font-size: 13px; padding: 8px 12px; }
-        }
+    .glow-circle:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.9);
+    }
 
-        .pulse { animation: pulse 1.5s infinite ease-in-out; }
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.6); }
-            70% { transform: scale(1.1); box-shadow: 0 0 10px 10px rgba(255,255,255,0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-        }
-    </style>
+    #chat-logo img {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* ☁️ Tooltip Cloud Style */
+    #chat-tooltip {
+      position: fixed;
+      bottom: 90px;
+      right: 110px;
+      background: #ffffff;
+      color: #000;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 50px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      opacity: 1;
+      transform: translateY(0);
+      z-index: 1002;
+      transition: all 0.4s ease-in-out;
+    }
+
+    #chat-tooltip::after {
+      content: "";
+      position: absolute;
+      bottom: -6px;
+      right: 25px;
+      width: 14px;
+      height: 14px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 6px 6px 0 rgba(255,255,255,1);
+    }
+
+    @keyframes floatUpDown {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <button id="close-chat" style="position:absolute;top:10px;right:10px;background:#f3f3f4;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;font-weight:bold;">✖</button>
-
-        <div id="chat-box"></div>
-
-        <div id="main-btn-container">
-            <button class="btn-main" id="main-btn">Main Menu</button>
-        </div>
-
-        <div id="input-container">
-            <input type="text" id="user-input" placeholder="Type your message here...">
-            <button id="send-btn">Send</button>
-        </div>
+  <div class="chat-container">
+    <button id="close-chat" style="position:absolute;top:10px;right:10px;background:#f3f3f4;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;font-weight:bold;">✖</button>
+    <div id="chat-box"></div>
+    <div id="main-btn-container">
+      <button class="btn-main" id="main-btn">Main Menu</button>
     </div>
-
-    <div id="chat-tooltip">Explore UJustBe. Click here</div>
-
-    <div id="chat-logo">
-        <img src="{{ url_for('static', filename='chat-icon.jpeg') }}" alt="Chat" width="60" height="60">
+    <div id="input-container">
+      <input type="text" id="user-input" placeholder="Type your message here...">
+      <button id="send-btn">Send</button>
     </div>
+  </div>
 
-    <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const chatLogo = document.getElementById("chat-logo");
-        const chatContainer = document.querySelector(".chat-container");
-        const closeChatBtn = document.getElementById("close-chat");
-        const tooltip = document.getElementById("chat-tooltip");
-        let tooltipTimer;
+  <!-- ✨ Floating Chat Icon + Cloud Tooltip -->
+  <div id="chat-tooltip"> Explore UJustBe. Click here</div>
+  <div id="chat-logo">
+    <div class="glow-circle">
+      <img src="{{ url_for('static', filename='chat-icon.jpeg') }}" alt="Chat Logo">
+    </div>
+  </div>
 
-        function scrollToBottom() {
-            const chatBox = document.getElementById("chat-box");
-            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
-        }
+  <!-- 🔹 Chat Logic -->
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const chatLogo = document.getElementById("chat-logo");
+    const chatContainer = document.querySelector(".chat-container");
+    const closeChatBtn = document.getElementById("close-chat");
+    const tooltip = document.getElementById("chat-tooltip");
+    let userName = "", email = "", phone = "";
+    let isRegistered = false;
 
-        tooltipTimer = setTimeout(() => {
-            chatLogo.classList.add("pulse");
-            tooltip.style.opacity = "1";
-        }, 3000);
+    // 🌥 Tooltip (cloud) show/hide logic
+    tooltip.style.opacity = "1";
+    chatLogo.addEventListener("click", async () => {
+      tooltip.style.opacity = "0"; // hide cloud when chat opens
+      chatContainer.style.display = "flex";
+      chatLogo.style.display = "none";
+      const chatBox = document.getElementById("chat-box");
+      chatBox.innerHTML = "";
+      await fetch("/reset_chat", { method: "POST" });
 
-        chatLogo.addEventListener("click", () => {
-            chatContainer.style.display = "flex";
-            chatLogo.style.display = "none";
-            chatLogo.classList.remove("pulse");
-            tooltip.style.opacity = "0";
-            clearTimeout(tooltipTimer);
-
-            setTimeout(() => {
-                const chatBox = document.getElementById("chat-box");
-                const bubble1 = document.createElement("div");
-                bubble1.className = "bot-msg";
-                bubble1.innerText = "🌠 Hello there! I'm UJBot — your virtual guide.";
-                chatBox.appendChild(bubble1);
-
-                const bubble2 = document.createElement("div");
-                bubble2.className = "bot-msg";
-                bubble2.innerText = "Let's get started — please enter your Name:";
-                chatBox.appendChild(bubble2);
-
-                scrollToBottom();
-            }, 1000);
-        });
-
-        closeChatBtn.addEventListener("click", () => {
-            chatContainer.style.display = "none";
-            chatLogo.style.display = "block";
-            const chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML = "";
-            document.getElementById("user-input").value = "";
-            tooltipTimer = setTimeout(() => {
-                chatLogo.classList.add("pulse");
-                tooltip.style.opacity = "1";
-            }, 3000);
-        });
-
-        async function sendMessage(message) {
-            const chatBox = document.getElementById("chat-box");
-            const userBubble = document.createElement("div");
-            userBubble.className = "user-msg";
-            userBubble.innerText = message;
-            chatBox.appendChild(userBubble);
-            scrollToBottom();
-
-            if (message.toLowerCase() === "exit") {
-                showStarRating();
-                return;
-            }
-
-            const oldMenu = document.querySelector(".menu-buttons");
-            if (oldMenu) oldMenu.remove();
-
-            const typingBubble = document.createElement("div");
-            typingBubble.className = "bot-msg";
-            typingBubble.innerText = "Typing...";
-            chatBox.appendChild(typingBubble);
-            scrollToBottom();
-
-            const response = await fetch("/get_response", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message })
-            });
-
-            const data = await response.json();
-            typingBubble.remove();
-
-            const botBubble = document.createElement("div");
-            botBubble.className = "bot-msg";
-            botBubble.innerText = data.response;
-            chatBox.appendChild(botBubble);
-            scrollToBottom();
-
-            if (data.buttons && data.buttons.length > 0) showMenuButtons(data.buttons);
-        }
-
-        function showMenuButtons(buttons) {
-            const chatBox = document.getElementById("chat-box");
-            const oldMenu = document.querySelector(".menu-buttons");
-            if (oldMenu) oldMenu.remove();
-
-            const menuDiv = document.createElement("div");
-            menuDiv.className = "menu-buttons";
-
-            buttons.forEach(option => {
-                const btn = document.createElement("button");
-                btn.className = "menu-btn";
-                btn.innerText = option;
-                btn.onclick = () => sendMessage(option);
-                menuDiv.appendChild(btn);
-            });
-
-            chatBox.appendChild(menuDiv);
-            scrollToBottom();
-        }
-
-        // ⭐ Star Rating with mandatory feedback for <3
-        function showStarRating() {
-            const chatBox = document.getElementById("chat-box");
-            const oldMenu = document.querySelector(".menu-buttons");
-            if (oldMenu) oldMenu.remove();
-
-            const starDiv = document.createElement("div");
-            starDiv.className = "menu-buttons star-rating";
-
-            for (let i = 1; i <= 5; i++) {
-                const star = document.createElement("span");
-                star.className = "star";
-                star.innerHTML = "★";
-                star.dataset.value = i;
-                star.addEventListener("mouseover", () => highlightStars(i));
-                star.addEventListener("mouseout", () => highlightStars(0));
-                star.addEventListener("click", () => handleStarClick(i));
-                starDiv.appendChild(star);
-            }
-
-            chatBox.appendChild(starDiv);
-            scrollToBottom();
-        }
-
-        function highlightStars(count) {
-            const stars = document.querySelectorAll(".star-rating .star");
-            stars.forEach(star => {
-                const value = parseInt(star.dataset.value);
-                star.classList.toggle("hovered", value <= count);
-            });
-        }
-
-        function handleStarClick(rating) {
-            const oldMenu = document.querySelector(".star-rating");
-            if (oldMenu) oldMenu.remove();
-
-            const chatBox = document.getElementById("chat-box");
-
-            if (rating < 3) {
-                const feedbackBubble = document.createElement("div");
-                feedbackBubble.className = "bot-msg";
-                feedbackBubble.innerText = "We’re sorry your experience wasn’t great 😔 Please tell us how we can improve:";
-                chatBox.appendChild(feedbackBubble);
-                scrollToBottom();
-
-                const feedbackInput = document.createElement("input");
-                feedbackInput.type = "text";
-                feedbackInput.placeholder = "Type your feedback...";
-                feedbackInput.style.width = "100%";
-                feedbackInput.style.padding = "10px";
-                feedbackInput.style.marginTop = "10px";
-                feedbackInput.style.borderRadius = "8px";
-                feedbackInput.style.border = "none";
-
-                const submitBtn = document.createElement("button");
-                submitBtn.innerText = "Submit Feedback";
-                submitBtn.className = "btn-main";
-                submitBtn.style.marginTop = "10px";
-
-                submitBtn.onclick = () => {
-                    const feedback = feedbackInput.value.trim();
-                    if (!feedback) {
-                        alert("Please enter feedback before submitting.");
-                        return;
-                    }
-                    const thanks = document.createElement("div");
-                    thanks.className = "bot-msg";
-                    thanks.innerText = "Thank you for your valuable feedback 💬";
-                    chatBox.appendChild(thanks);
-                    feedbackInput.remove();
-                    submitBtn.remove();
-                    scrollToBottom();
-                };
-
-                chatBox.appendChild(feedbackInput);
-                chatBox.appendChild(submitBtn);
-            } else {
-                const thanksBubble = document.createElement("div");
-                thanksBubble.className = "bot-msg";
-                thanksBubble.innerText = "Thank you for your feedback! ⭐";
-                chatBox.appendChild(thanksBubble);
-            }
-            scrollToBottom();
-        }
-
-        document.getElementById("send-btn").onclick = () => {
-            const input = document.getElementById("user-input");
-            const msg = input.value.trim();
-            if (!msg) return;
-            sendMessage(msg);
-            input.value = "";
-        };
-
-        document.getElementById("user-input").addEventListener("keypress", e => {
-            if (e.key === "Enter") document.getElementById("send-btn").click();
-        });
-
-        document.getElementById("main-btn").onclick = () => sendMessage("main");
+      chatBox.innerHTML += `
+        <div class="bot-msg">🌠 Hello there! I'm UJBot — your virtual guide.</div>
+        <div class="bot-msg">Let's get started — please enter your Name:</div>
+      `;
     });
-    </script>
+
+    closeChatBtn.addEventListener("click", () => {
+      chatContainer.style.display = "none";
+      chatLogo.style.display = "block";
+      tooltip.style.opacity = "1"; // show cloud again
+    });
+
+    function scrollToBottom() {
+      const chatBox = document.getElementById("chat-box");
+      chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+    }
+
+    async function sendMessage(message) {
+      const chatBox = document.getElementById("chat-box");
+
+      if (!isRegistered) {
+        if (!userName) {
+          userName = message;
+          createUser(userName);
+          chatBox.innerHTML += `<div class="user-msg">${message}</div>
+                                <div class="bot-msg">Hi ${userName}! Please enter your email ID next:</div>`;
+          scrollToBottom();
+          return;
+        }
+        if (!email && message.includes("@")) {
+          email = message;
+          updateUserDetails(email, "");
+          chatBox.innerHTML += `<div class="user-msg">${message}</div>
+                                <div class="bot-msg">Thanks! Now please enter your phone number:</div>`;
+          scrollToBottom();
+          return;
+        }
+        if (email && !phone && /^\d{10}$/.test(message)) {
+          phone = message;
+          await updateUserDetails(email, phone);
+          isRegistered = true;
+          chatBox.innerHTML += `<div class="user-msg">${message}</div>
+                                <div class="bot-msg">🎉 Perfect, ${userName}! You're all set.</div>`;
+          scrollToBottom();
+
+          // Load Main Menu
+          const typing = document.createElement("div");
+          typing.className = "bot-msg";
+          typing.innerText = "Typing...";
+          chatBox.appendChild(typing);
+          scrollToBottom();
+
+          try {
+            const res = await fetch("/get_response", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ message: "main" })
+            });
+            const data = await res.json();
+            typing.remove();
+            chatBox.innerHTML += `<div class="bot-msg">${data.response}</div>`;
+            if (data.buttons?.length) showMenuButtons(data.buttons);
+          } catch {
+            typing.remove();
+            chatBox.innerHTML += `<div class="bot-msg">⚠️ Couldn't load the main menu. Please try again.</div>`;
+          }
+          scrollToBottom();
+          return;
+        }
+        return;
+      }
+
+      // Normal chat flow
+      chatBox.innerHTML += `<div class="user-msg">${message}</div>`;
+      saveChatMessage("user", message);
+      scrollToBottom();
+
+      const typing = document.createElement("div");
+      typing.className = "bot-msg";
+      typing.innerText = "Typing...";
+      chatBox.appendChild(typing);
+      scrollToBottom();
+
+      try {
+        const res = await fetch("/get_response", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        typing.remove();
+
+        chatBox.innerHTML += `<div class="bot-msg">${data.response}</div>`;
+        saveChatMessage("bot", data.response);
+        if (data.buttons?.length) showMenuButtons(data.buttons);
+      } catch {
+        typing.remove();
+        chatBox.innerHTML += `<div class="bot-msg">⚠️ Oops! Something went wrong.</div>`;
+      }
+      scrollToBottom();
+    }
+
+    function showMenuButtons(buttons) {
+      const chatBox = document.getElementById("chat-box");
+      const old = document.querySelector(".menu-buttons");
+      if (old) old.remove();
+
+      const menu = document.createElement("div");
+      menu.className = "menu-buttons";
+      buttons.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "menu-btn";
+        btn.innerText = opt;
+        btn.onclick = () => sendMessage(opt);
+        menu.appendChild(btn);
+      });
+      chatBox.appendChild(menu);
+      scrollToBottom();
+    }
+
+    document.getElementById("send-btn").onclick = () => {
+      const input = document.getElementById("user-input");
+      const msg = input.value.trim();
+      if (!msg) return;
+      sendMessage(msg);
+      input.value = "";
+    };
+    document.getElementById("user-input").addEventListener("keypress", e => {
+      if (e.key === "Enter") document.getElementById("send-btn").click();
+    });
+
+    document.getElementById("main-btn").onclick = async () => sendMessage("main");
+  });
+  </script>
+
+  <!-- 🔹 Firebase Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, getDocs, query, where } 
+    from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyARJI0DZgGwH9j2Hz318ddonBd55IieUBs",
+      authDomain: "monthlymeetingapp.firebaseapp.com",
+      projectId: "monthlymeetingapp",
+      storageBucket: "monthlymeetingapp.appspot.com",
+      messagingSenderId: "139941390700",
+      appId: "1:139941390700:web:ab6aa16fcd8ca71bb52b49",
+      measurementId: "G-26KEDXQKK9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let userId = null;
+    const today = new Date().toISOString().split("T")[0];
+
+    function normalizeText(text) {
+      return text.trim().toLowerCase().replace(/\s+/g, " ");
+    }
+    function capitalizeName(name) {
+      return name.split(" ").map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    }
+
+    async function generateCustomUserId(name) {
+      const normName = capitalizeName(name);
+      const parts = normName.split(" ");
+      const first = parts[0] || "User";
+      const last = parts[1] || "X";
+      const base = (first[0] + last).replace(/[^A-Za-z]/g, "").slice(0, 8);
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("__name__", ">=", base), where("__name__", "<", base + "~"));
+      const snap = await getDocs(q);
+      let maxNum = 0;
+      snap.forEach(d => {
+        const m = d.id.match(new RegExp(`^${base}(\\d+)$`, "i"));
+        if (m) {
+          const n = parseInt(m[1]);
+          if (n > maxNum) maxNum = n;
+        }
+      });
+      return `${base}${String(maxNum + 1).padStart(2, "0")}`;
+    }
+
+    async function findExistingUser(email, phone) {
+      const normEmail = normalizeText(email);
+      const normPhone = phone.trim();
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", normEmail), where("phone", "==", normPhone));
+      const snap = await getDocs(q);
+      if (!snap.empty) return snap.docs[0].id;
+      return null;
+    }
+
+    window.createUser = async function(name) {
+      window.tempUserName = capitalizeName(name);
+    };
+
+    window.updateUserDetails = async function(email, phone) {
+      const normEmail = normalizeText(email);
+      const normPhone = phone.trim();
+      const existing = await findExistingUser(normEmail, normPhone);
+      if (existing) {
+        userId = existing;
+      } else {
+        const name = window.tempUserName || "Unknown User";
+        const newId = await generateCustomUserId(name);
+        userId = newId;
+        const userRef = doc(db, "users", userId);
+        await setDoc(userRef, { name, email: normEmail, phone: normPhone, createdAt: new Date().toISOString() });
+      }
+    };
+
+    window.saveChatMessage = async function(sender, message) {
+      if (!userId) return;
+      try {
+        const convRef = doc(db, "users", userId, "conversations", today);
+        const key = "message_" + Date.now();
+        await updateDoc(convRef, { [key]: { sender, text: message, timestamp: new Date().toISOString() } });
+      } catch {
+        const convRef = doc(db, "users", userId, "conversations", today);
+        const key = "message_" + Date.now();
+        await setDoc(convRef, { [key]: { sender, text: message, timestamp: new Date().toISOString() } });
+      }
+      await addDoc(collection(db, "chat_logs"), { userId, sender, message, date: today, timestamp: new Date().toISOString() });
+    };
+  </script>
 </body>
 </html>

@@ -1,15 +1,10 @@
 from flask import Flask, render_template, request, jsonify, session
-import os, re
+import os
 
 app = Flask(__name__)
 app.secret_key = "supersecret"
 
-# ---------------------- Validation Patterns ----------------------
-EMAIL_REGEX = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
-PHONE_REGEX = r"^\d{10}$"
-NAME_REGEX = r"^[A-Za-z ]+$"
-
-# ---------------------- Menu Buttons & Answers ----------------------
+# ---------------------- Menu Data ----------------------
 menu_data = {
     "main": [
         "About UJustBe",
@@ -27,6 +22,7 @@ menu_data = {
             "Who can join UJustBe?",
             "What is an Orbiter?",
             "CosmOrbiters & MentOrbiters",
+            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -36,13 +32,13 @@ menu_data = {
             "CosmOrbiters & MentOrbiters": "CosmOrbiters are listed businesses that receive referrals.\nMentOrbiters are senior contributors who mentor and support others."
         }
     },
-
     "Enrollment & Activation": {
         "buttons": [
             "How can I become an Orbiter?",
             "UJustBe Business Cycle",
             "What happens after enrollment?",
             "Enrollment vs Activation",
+            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -52,12 +48,12 @@ menu_data = {
             "Enrollment vs Activation": "Enrollment = Decision to join.\nActivation = When you start contributing and participating."
         }
     },
-
     "Contribution & Recognition": {
         "buttons": [
             "What are CC Points?",
             "How do I earn CC Points?",
             "Types of Recognition",
+            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -66,12 +62,12 @@ menu_data = {
             "Types of Recognition": "⭐ Contributor of the Week\n🔥 Most Active Contributing Orbiter\n🪐 MentOrbiter with Most Connects\n💎 Top Contributor in Popular Areas"
         }
     },
-
     "Referrals & Business Growth": {
         "buttons": [
             "How do referrals work?",
             "Can I list my business?",
             "Benefits of CosmOrbiter",
+            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -80,12 +76,12 @@ menu_data = {
             "Benefits of CosmOrbiter": "✅ Business visibility\n✅ Referral opportunities\n✅ Event participation\n✅ Recognition as a top CosmOrbiter"
         }
     },
-
     "Meetings & Events": {
         "buttons": [
             "What are Monthly Meetings?",
             "How to attend Monthly Meetings?",
             "What is an E2A Session?",
+            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -94,12 +90,12 @@ menu_data = {
             "What is an E2A Session?": "E2A (Empower to Act) sessions are awareness programs focusing on health, wealth, and wellbeing."
         }
     },
-
     "Culture & Values": {
         "buttons": [
             "Core Value",
             "Other Values",
             "Culture Philosophy",
+            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -108,12 +104,12 @@ menu_data = {
             "Culture Philosophy": "We want a world of happy faces 😊 where Orbiters contribute, connect, and grow together meaningfully."
         }
     },
-
     "Support & Contact": {
         "buttons": [
             "Contact Support",
             "Share an Idea",
             "Recover Login Details",
+            "Main Menu",
             "Exit"
         ],
         "answers": {
@@ -124,86 +120,38 @@ menu_data = {
     }
 }
 
+# ---------------------- Routes ----------------------
 @app.route("/")
 def home():
     session.clear()
-    session["registration_step"] = "name"  
+    session["menu_level"] = "main"
     return render_template("chat.html")
+
 
 @app.route("/get_response", methods=["POST"])
 def get_response():
     data = request.get_json()
-    user_message = data.get("message", "").strip()
+    user_message = data.get("message", "").strip().lower()
 
-    # ---------------- Registration Flow ----------------
-    if "registration_step" in session:
-        step = session["registration_step"]
-
-        # ✅ Name Validation
-        if step == "name":
-            if not re.match(NAME_REGEX, user_message):
-                return jsonify({"response": "Please enter a valid name (letters only):", "buttons": []})
-            session["user_name"] = user_message
-            session["registration_step"] = "email"
-            return jsonify({"response": "Great! Now please enter your Email ID:", "buttons": []})
-
-        # ✅ Email Validation
-        elif step == "email":
-            if not re.match(EMAIL_REGEX, user_message):
-                return jsonify({"response": "❌ Invalid format! Please enter a valid email address:", "buttons": []})
-
-            allowed_domains = ["gmail.com", "yahoo.com", "hotmail.com", "rediff.com", "outlook.com"]
-            domain = user_message.split("@")[-1].lower()
-
-            if domain not in allowed_domains:
-                allowed_str = ", ".join(allowed_domains)
-                return jsonify({
-                    "response": f"⚠️ Only emails from {allowed_str} are accepted. Please enter a valid one:",
-                    "buttons": []
-                })
-
-            session["user_email"] = user_message
-            session["registration_step"] = "Mobile"
-            return jsonify({"response": "Thanks! Finally enter your Mobile Number:", "buttons": []})
-
-        # ✅ Phone Validation
-        elif step == "Mobile":
-            if not re.match(PHONE_REGEX, user_message):
-                return jsonify({"response": "❌ Invalid Mobile number! Please enter 10 digits only:", "buttons": []})
-            session["user_phone"] = user_message
-            session.pop("registration_step")
-            session["menu_level"] = "main"
-
-            return jsonify({
-                "response": f"🎉 Welcome {session['user_name']}!\nHow can I help you today?",
-                "buttons": menu_data["main"]
-            })
-
-    # ---------------- Main Menu & Chat Flow ----------------
-    search_text = user_message.lower()
-
-    if search_text in ["exit", "quit", "bye"]:
+    # ---------------- Exit / Main Menu ----------------
+    if user_message in ["exit", "quit", "bye"]:
         return jsonify({"response": "Thank you for chatting! 👋", "buttons": []})
 
-    if search_text in ["main", "menu", "main menu"]:
+    if user_message in ["main", "menu", "main menu"]:
         session["menu_level"] = "main"
-        return jsonify({
-            "response": "Please choose a category:",
-            "buttons": menu_data["main"]
-        })
+        return jsonify({"response": "Please choose a category:", "buttons": menu_data["main"]})
 
+    # ---------------- Menu Navigation ----------------
     current_level = session.get("menu_level", "main")
 
-    # Submenu answers
-    if current_level != "main":
-        submenu = menu_data.get(current_level, {})
+    if current_level != "main" and current_level in menu_data:
+        submenu = menu_data[current_level]
         for btn, ans in submenu.get("answers", {}).items():
-            if search_text in btn.lower():
+            if user_message == btn.lower():
                 return jsonify({"response": ans, "buttons": submenu["buttons"]})
 
-    # Top-level menu click
     for item in menu_data["main"]:
-        if search_text in item.lower():
+        if user_message == item.lower():
             session["menu_level"] = item
             submenu = menu_data[item]
             return jsonify({
@@ -211,10 +159,19 @@ def get_response():
                 "buttons": submenu["buttons"]
             })
 
+    # Default fallback
     return jsonify({
-        "response": "I didn't get that 🤔\nTry choosing an option below ⬇️",
+        "response": "I didn’t get that 🤔 Try choosing an option below ⬇️",
         "buttons": menu_data["main"]
     })
+
+
+@app.route("/reset_chat", methods=["POST"])
+def reset_chat():
+    session.clear()
+    session["menu_level"] = "main"
+    return jsonify({"status": "ok"})
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
